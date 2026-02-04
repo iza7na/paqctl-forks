@@ -461,14 +461,37 @@ chmod +x paqet_darwin_amd64
 
 ```bash
 cat > ~/paqet/config.yaml << 'EOF'
-mode: client
-listen: 127.0.0.1:1080
-remote: YOUR_SERVER_IP:8443
-key: YOUR_SECRET_KEY
+role: "client"
+
+log:
+  level: "info"
+
+socks5:
+  - listen: "127.0.0.1:1080"
+
+network:
+  interface: "en0"  # Your network interface (en0 for macOS, eth0 for Linux)
+  ipv4:
+    addr: "YOUR_LOCAL_IP:0"  # Your local IP, e.g., 192.168.1.100:0
+    router_mac: "YOUR_ROUTER_MAC"  # Gateway MAC, e.g., aa:bb:cc:dd:ee:ff
+
+server:
+  addr: "YOUR_SERVER_IP:8443"
+
+transport:
+  protocol: "kcp"
+  kcp:
+    mode: "fast"
+    key: "YOUR_SECRET_KEY"
 EOF
 ```
 
-Replace `YOUR_SERVER_IP` and `YOUR_SECRET_KEY` with your actual values.
+Replace the placeholders:
+- `YOUR_LOCAL_IP`: Run `ifconfig en0 | grep inet` to find your IP
+- `YOUR_ROUTER_MAC`: Run `arp -n | grep gateway` or check your router
+- `YOUR_SERVER_IP` and `YOUR_SECRET_KEY`: Get from your server admin
+
+> **Tip:** Use `paqctl` for automatic configuration - it detects these values for you.
 
 #### Step 4: Run Paqet
 
@@ -627,15 +650,35 @@ chmod +x paqet_linux_amd64
 
 # Create config
 cat > config.yaml << 'EOF'
-mode: client
-listen: 127.0.0.1:1080
-remote: YOUR_SERVER_IP:8443
-key: YOUR_SECRET_KEY
+role: "client"
+
+log:
+  level: "info"
+
+socks5:
+  - listen: "127.0.0.1:1080"
+
+network:
+  interface: "eth0"  # Your network interface (ip link show)
+  ipv4:
+    addr: "YOUR_LOCAL_IP:0"  # Your local IP, e.g., 192.168.1.100:0
+    router_mac: "YOUR_ROUTER_MAC"  # Gateway MAC (ip neigh | grep default)
+
+server:
+  addr: "YOUR_SERVER_IP:8443"
+
+transport:
+  protocol: "kcp"
+  kcp:
+    mode: "fast"
+    key: "YOUR_SECRET_KEY"
 EOF
 
 # Run (requires root for raw sockets)
 sudo ./paqet_linux_amd64 run -c config.yaml
 ```
+
+> **Tip:** Use `paqctl` for automatic configuration - it detects network values for you.
 
 ### Option B: GFK
 
@@ -1169,14 +1212,37 @@ chmod +x paqet_darwin_amd64
 
 ```bash
 cat > ~/paqet/config.yaml << 'EOF'
-mode: client
-listen: 127.0.0.1:1080
-remote: YOUR_SERVER_IP:8443
-key: YOUR_SECRET_KEY
+role: "client"
+
+log:
+  level: "info"
+
+socks5:
+  - listen: "127.0.0.1:1080"
+
+network:
+  interface: "en0"  # اینترفیس شبکه (ifconfig برای پیدا کردن)
+  ipv4:
+    addr: "YOUR_LOCAL_IP:0"  # IP محلی شما، مثلا 192.168.1.100:0
+    router_mac: "YOUR_ROUTER_MAC"  # MAC روتر (arp -a | grep gateway)
+
+server:
+  addr: "YOUR_SERVER_IP:8443"
+
+transport:
+  protocol: "kcp"
+  kcp:
+    mode: "fast"
+    key: "YOUR_SECRET_KEY"
 EOF
 ```
 
-`YOUR_SERVER_IP` و `YOUR_SECRET_KEY` را با مقادیر واقعی جایگزین کنید.
+مقادیر زیر را جایگزین کنید:
+- `YOUR_LOCAL_IP`: با `ifconfig en0 | grep inet` پیدا کنید
+- `YOUR_ROUTER_MAC`: با `arp -a | grep gateway` پیدا کنید
+- `YOUR_SERVER_IP` و `YOUR_SECRET_KEY`: از ادمین سرور بگیرید
+
+> **نکته:** از `paqctl` برای تنظیم خودکار استفاده کنید - مقادیر شبکه را خودش تشخیص می‌دهد.
 
 #### مرحله ۴: اجرای Paqet
 
@@ -1255,15 +1321,35 @@ chmod +x paqet_linux_amd64
 
 # ایجاد config
 cat > config.yaml << 'EOF'
-mode: client
-listen: 127.0.0.1:1080
-remote: YOUR_SERVER_IP:8443
-key: YOUR_SECRET_KEY
+role: "client"
+
+log:
+  level: "info"
+
+socks5:
+  - listen: "127.0.0.1:1080"
+
+network:
+  interface: "eth0"  # اینترفیس شبکه (ip link show)
+  ipv4:
+    addr: "YOUR_LOCAL_IP:0"  # IP محلی شما، مثلا 192.168.1.100:0
+    router_mac: "YOUR_ROUTER_MAC"  # MAC روتر (ip neigh | grep default)
+
+server:
+  addr: "YOUR_SERVER_IP:8443"
+
+transport:
+  protocol: "kcp"
+  kcp:
+    mode: "fast"
+    key: "YOUR_SECRET_KEY"
 EOF
 
 # اجرا (نیاز به root)
 sudo ./paqet_linux_amd64 run -c config.yaml
 ```
+
+> **نکته:** از `paqctl` برای تنظیم خودکار استفاده کنید - مقادیر شبکه را خودش تشخیص می‌دهد.
 
 ### گزینه B: GFK
 
