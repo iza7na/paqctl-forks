@@ -1703,8 +1703,13 @@ if [ "\$ROLE" = "server" ]; then
     iptables -t mangle -C OUTPUT -p tcp --sport "\$port" -m comment --comment "\$TAG" --tcp-flags RST RST -j DROP 2>/dev/null || \\
         iptables -t mangle -A OUTPUT -p tcp --sport "\$port" -m comment --comment "\$TAG" --tcp-flags RST RST -j DROP 2>/dev/null
 
-    # Apply GFK firewall rules (DROP on VIO port)
+    # Apply GFK firewall rules (DROP on VIO port + NOTRACK to bypass conntrack)
     vio_port="\${GFK_VIO_PORT:-45000}"
+    modprobe iptable_raw 2>/dev/null || true
+    iptables -t raw -C PREROUTING -p tcp --dport "\$vio_port" -m comment --comment "\$TAG" -j NOTRACK 2>/dev/null || \\
+        iptables -t raw -A PREROUTING -p tcp --dport "\$vio_port" -m comment --comment "\$TAG" -j NOTRACK 2>/dev/null
+    iptables -t raw -C OUTPUT -p tcp --sport "\$vio_port" -m comment --comment "\$TAG" -j NOTRACK 2>/dev/null || \\
+        iptables -t raw -A OUTPUT -p tcp --sport "\$vio_port" -m comment --comment "\$TAG" -j NOTRACK 2>/dev/null
     iptables -C INPUT -p tcp --dport "\$vio_port" -m comment --comment "\$TAG" -j DROP 2>/dev/null || \\
         iptables -A INPUT -p tcp --dport "\$vio_port" -m comment --comment "\$TAG" -j DROP 2>/dev/null
     iptables -C OUTPUT -p tcp --sport "\$vio_port" --tcp-flags RST RST -m comment --comment "\$TAG" -j DROP 2>/dev/null || \\
@@ -3069,8 +3074,14 @@ _apply_firewall() {
     local TAG="paqctl"
 
     if [ "$BACKEND" = "gfw-knocker" ]; then
-        # GFK: DROP TCP on VIO port so OS doesn't respond, raw socket handles it
+        # GFK: NOTRACK + DROP TCP on VIO port so OS doesn't respond, raw socket handles it
         local vio_port="${GFK_VIO_PORT:-45000}"
+        modprobe iptable_raw 2>/dev/null || true
+        # NOTRACK: bypass conntrack for VIO packets (prevents hypervisor/bridge filtering)
+        iptables -t raw -C PREROUTING -p tcp --dport "$vio_port" -m comment --comment "$TAG" -j NOTRACK 2>/dev/null || \
+            iptables -t raw -A PREROUTING -p tcp --dport "$vio_port" -m comment --comment "$TAG" -j NOTRACK 2>/dev/null || true
+        iptables -t raw -C OUTPUT -p tcp --sport "$vio_port" -m comment --comment "$TAG" -j NOTRACK 2>/dev/null || \
+            iptables -t raw -A OUTPUT -p tcp --sport "$vio_port" -m comment --comment "$TAG" -j NOTRACK 2>/dev/null || true
         # Drop incoming TCP on VIO port (scapy sniffer will handle it)
         iptables -C INPUT -p tcp --dport "$vio_port" -m comment --comment "$TAG" -j DROP 2>/dev/null || \
             iptables -A INPUT -p tcp --dport "$vio_port" -m comment --comment "$TAG" -j DROP 2>/dev/null || \
@@ -3122,6 +3133,10 @@ _remove_firewall() {
     # This allows stop_paqet_backend and stop_gfk_backend to remove their own rules independently
     if [ "$BACKEND" = "gfw-knocker" ]; then
         local vio_port="${GFK_VIO_PORT:-45000}"
+        iptables -t raw -D PREROUTING -p tcp --dport "$vio_port" -m comment --comment "$TAG" -j NOTRACK 2>/dev/null || true
+        iptables -t raw -D OUTPUT -p tcp --sport "$vio_port" -m comment --comment "$TAG" -j NOTRACK 2>/dev/null || true
+        iptables -t raw -D PREROUTING -p tcp --dport "$vio_port" -j NOTRACK 2>/dev/null || true
+        iptables -t raw -D OUTPUT -p tcp --sport "$vio_port" -j NOTRACK 2>/dev/null || true
         iptables -D INPUT -p tcp --dport "$vio_port" -m comment --comment "$TAG" -j DROP 2>/dev/null || true
         iptables -D OUTPUT -p tcp --sport "$vio_port" --tcp-flags RST RST -m comment --comment "$TAG" -j DROP 2>/dev/null || true
         # Also try without comment for backwards compatibility
@@ -6677,7 +6692,12 @@ main() {
             else
                 local _vio_port="${GFK_VIO_PORT:-45000}"
                 log_info "Blocking VIO TCP port $_vio_port (raw socket handles it)..."
-                # Use same tagging as _apply_firewall for consistency
+                # NOTRACK: bypass conntrack for VIO packets (prevents hypervisor/bridge filtering)
+                modprobe iptable_raw 2>/dev/null || true
+                iptables -t raw -C PREROUTING -p tcp --dport "$_vio_port" -m comment --comment "paqctl" -j NOTRACK 2>/dev/null || \
+                    iptables -t raw -A PREROUTING -p tcp --dport "$_vio_port" -m comment --comment "paqctl" -j NOTRACK 2>/dev/null || true
+                iptables -t raw -C OUTPUT -p tcp --sport "$_vio_port" -m comment --comment "paqctl" -j NOTRACK 2>/dev/null || \
+                    iptables -t raw -A OUTPUT -p tcp --sport "$_vio_port" -m comment --comment "paqctl" -j NOTRACK 2>/dev/null || true
                 # Drop incoming TCP on VIO port (scapy sniffer handles it)
                 iptables -C INPUT -p tcp --dport "$_vio_port" -m comment --comment "paqctl" -j DROP 2>/dev/null || \
                     iptables -A INPUT -p tcp --dport "$_vio_port" -m comment --comment "paqctl" -j DROP 2>/dev/null || \
