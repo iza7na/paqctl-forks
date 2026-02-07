@@ -3496,6 +3496,9 @@ show_status() {
                 echo -e "  Mappings:   ${_md}"
                 echo -e "  SOCKS5:     ${GREEN}127.0.0.1:${GFK_SOCKS_PORT}${NC} (server-side)"
                 echo -e "  Client use: ${GREEN}127.0.0.1:${GFK_SOCKS_VIO_PORT}${NC} (set as proxy on client)"
+            elif [ "${XRAY_PANEL_DETECTED:-false}" = "true" ]; then
+                echo -e "  Mappings:   ${GFK_PORT_MAPPINGS}"
+                echo -e "  SOCKS5:     ${YELLOW}not configured${NC}"
             else
                 echo -e "  Mappings:   ${GFK_PORT_MAPPINGS}"
                 local _srv_port _cli_port
@@ -7107,13 +7110,20 @@ main() {
             echo -e "  QUIC port:  ${BOLD}${GFK_QUIC_PORT}${NC}"
             if [ "${XRAY_PANEL_DETECTED:-false}" = "true" ]; then
                 echo -e "  Xray:       ${BOLD}Existing panel detected (forwarding to port ${_xray_port})${NC}"
-                echo -e "  SOCKS5:     ${BOLD}127.0.0.1:${GFK_SOCKS_PORT:-N/A} (auto-added, VIO port ${GFK_SOCKS_VIO_PORT:-N/A})${NC}"
-                echo ""
-                echo -e "  ${GREEN}✓ GFK forwards to panel + SOCKS5 proxy added${NC}"
+                if [ -n "${GFK_SOCKS_VIO_PORT:-}" ]; then
+                    echo -e "  SOCKS5:     ${BOLD}127.0.0.1:${GFK_SOCKS_PORT} (auto-added, VIO port ${GFK_SOCKS_VIO_PORT})${NC}"
+                    echo ""
+                    echo -e "  ${GREEN}✓ GFK forwards to panel + SOCKS5 proxy added${NC}"
+                else
+                    echo ""
+                    echo -e "  ${GREEN}✓ GFK forwards to panel${NC}"
+                fi
                 local _first_vio
                 _first_vio=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d: -f1 | cut -d, -f1)
                 echo -e "  ${YELLOW}! Panel users: configure Iran outbound → 127.0.0.1:${_first_vio}${NC}"
-                echo -e "  ${YELLOW}! Direct SOCKS5: use 127.0.0.1:${GFK_SOCKS_VIO_PORT:-} on client${NC}"
+                if [ -n "${GFK_SOCKS_VIO_PORT:-}" ]; then
+                    echo -e "  ${YELLOW}! Direct SOCKS5: use 127.0.0.1:${GFK_SOCKS_VIO_PORT} on client${NC}"
+                fi
             else
                 echo -e "  Xray:       ${BOLD}127.0.0.1:${_xray_port} (SOCKS5)${NC}"
                 echo ""
@@ -7131,6 +7141,11 @@ main() {
                 echo -e "${YELLOW}║${NC}  ${GREEN}Proxy port:  127.0.0.1:${GFK_SOCKS_VIO_PORT} (SOCKS5 — use this on client)${NC}"
                 local _panel_vio
                 _panel_vio=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+                echo -e "${YELLOW}║${NC}  Panel port: 127.0.0.1:${_panel_vio} (vmess/vless — for panel-to-panel)"
+            elif [ "${XRAY_PANEL_DETECTED:-false}" = "true" ]; then
+                local _panel_vio
+                _panel_vio=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+                echo -e "${YELLOW}║${NC}"
                 echo -e "${YELLOW}║${NC}  Panel port: 127.0.0.1:${_panel_vio} (vmess/vless — for panel-to-panel)"
             else
                 local _proxy_vio

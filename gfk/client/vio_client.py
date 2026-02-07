@@ -1,5 +1,6 @@
 from scapy.all import AsyncSniffer,IP,TCP,Raw,conf,Ether,get_if_hwaddr
 import asyncio
+import random
 import parameters
 import logging
 import os
@@ -84,6 +85,8 @@ else:
 
 def send_to_violated_TCP(binary_data):
     new_pkt = basepkt.copy()
+    new_pkt[TCP].seq = random.randint(1024,1048576)
+    new_pkt[TCP].ack = random.randint(1024,1048576)
     new_pkt[TCP].load = binary_data
     skt.send(new_pkt)
 

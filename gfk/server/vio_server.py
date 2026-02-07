@@ -99,8 +99,8 @@ def send_to_violated_TCP(binary_data,client_ip,client_port):
     new_pkt = basepkt.copy()
     new_pkt[IP].dst = client_ip
     new_pkt[TCP].dport = client_port
-    # new_pkt[TCP].seq = random.randint(1024,1048576)
-    # new_pkt[TCP].ack = random.randint(1024,1048576)
+    new_pkt[TCP].seq = random.randint(1024,1048576)
+    new_pkt[TCP].ack = random.randint(1024,1048576)
     new_pkt[TCP].load = binary_data
     skt.send(new_pkt)
 
