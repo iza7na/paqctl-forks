@@ -573,7 +573,7 @@ run_config_wizard() {
     # Backend selection
     echo -e "${BOLD}Select backend:${NC}"
     echo "  1. paqet       (Go/KCP, built-in SOCKS5, single binary)"
-    echo "  2. gfw-knocker (Python/QUIC, port forwarding + microsocks)"
+    echo "  2. gfw-knocker (Python/QUIC, port forwarding + SOCKS5)"
     echo ""
     local backend_choice
     read -p "  Enter choice [1/2]: " backend_choice < /dev/tty || true
@@ -832,17 +832,6 @@ _wizard_gfk() {
         echo -e "${BOLD}TCP port mappings${NC} (must match server) [14000:443]:"
         read -p "  Mappings: " input < /dev/tty || true
         GFK_PORT_MAPPINGS="${input:-14000:443}"
-
-        # SOCKS5 port via microsocks
-        echo ""
-        echo -e "${BOLD}SOCKS5 listen port${NC} (via microsocks) [1080]:"
-        read -p "  SOCKS port: " input < /dev/tty || true
-        MICROSOCKS_PORT="${input:-1080}"
-        if ! _validate_port "$MICROSOCKS_PORT"; then
-            log_warn "Invalid port. Using default 1080."
-            MICROSOCKS_PORT=1080
-        fi
-        SOCKS_PORT="$MICROSOCKS_PORT"
     fi
 
     # Generate GFK config
@@ -1750,24 +1739,20 @@ PYEOF
 create_gfk_client_wrapper() {
     log_info "Creating GFW-knocker client wrapper..."
     local wrapper="$INSTALL_DIR/bin/gfk-client.sh"
-    local msport="${MICROSOCKS_PORT:-1080}"
     mkdir -p "$INSTALL_DIR/bin"
     cat > "$wrapper" << 'WRAPEOF'
 #!/bin/bash
 set -e
 GFK_DIR="REPLACE_ME_GFK_DIR"
 INSTALL_DIR="REPLACE_ME_INSTALL_DIR"
-MICROSOCKS_PORT="REPLACE_ME_MSPORT"
 
 cd "$GFK_DIR"
 "$INSTALL_DIR/venv/bin/python" mainclient.py &
 PID1=$!
-"$INSTALL_DIR/bin/microsocks" -i 127.0.0.1 -p "$MICROSOCKS_PORT" &
-PID2=$!
-trap "kill $PID1 $PID2 2>/dev/null; wait" EXIT INT TERM
+trap "kill $PID1 2>/dev/null; wait" EXIT INT TERM
 wait
 WRAPEOF
-    sed "s#REPLACE_ME_GFK_DIR#${GFK_DIR}#g; s#REPLACE_ME_INSTALL_DIR#${INSTALL_DIR}#g; s#REPLACE_ME_MSPORT#${msport}#g" "$wrapper" > "$wrapper.sed" && mv "$wrapper.sed" "$wrapper"
+    sed "s#REPLACE_ME_GFK_DIR#${GFK_DIR}#g; s#REPLACE_ME_INSTALL_DIR#${INSTALL_DIR}#g" "$wrapper" > "$wrapper.sed" && mv "$wrapper.sed" "$wrapper"
     chmod 755 "$wrapper"
     log_success "Client wrapper created at $wrapper"
 }
@@ -2699,23 +2684,19 @@ PYEOF
 
 create_gfk_client_wrapper() {
     local wrapper="$INSTALL_DIR/bin/gfk-client.sh"
-    local msport="${MICROSOCKS_PORT:-1080}"
     mkdir -p "$INSTALL_DIR/bin"
     cat > "$wrapper" << 'WEOF'
 #!/bin/bash
 set -e
 GFK_DIR="REPLACE_GFK"
 INSTALL_DIR="REPLACE_INST"
-MICROSOCKS_PORT="REPLACE_MSP"
 cd "$GFK_DIR"
 "$INSTALL_DIR/venv/bin/python" mainclient.py &
 PID1=$!
-"$INSTALL_DIR/bin/microsocks" -i 127.0.0.1 -p "$MICROSOCKS_PORT" &
-PID2=$!
-trap "kill $PID1 $PID2 2>/dev/null; wait" EXIT INT TERM
+trap "kill $PID1 2>/dev/null; wait" EXIT INT TERM
 wait
 WEOF
-    sed "s#REPLACE_GFK#${GFK_DIR}#g; s#REPLACE_INST#${INSTALL_DIR}#g; s#REPLACE_MSP#${msport}#g" "$wrapper" > "$wrapper.sed" && mv "$wrapper.sed" "$wrapper"
+    sed "s#REPLACE_GFK#${GFK_DIR}#g; s#REPLACE_INST#${INSTALL_DIR}#g" "$wrapper" > "$wrapper.sed" && mv "$wrapper.sed" "$wrapper"
     chmod 755 "$wrapper"
 }
 
@@ -3664,18 +3645,14 @@ health_check() {
             fi
         fi
 
-        # 7. microsocks (client)
+        # 7. SOCKS5 port (client)
         if [ "$ROLE" = "client" ]; then
-            if [ -x "$INSTALL_DIR/bin/microsocks" ]; then
-                echo -e "  ${GREEN}✓${NC} microsocks binary found"
-            else
-                echo -e "  ${RED}✗${NC} microsocks binary missing"
-                issues=$((issues + 1))
-            fi
-            if is_running && ss -tlnp 2>/dev/null | grep -q ":${MICROSOCKS_PORT:-1080}"; then
-                echo -e "  ${GREEN}✓${NC} SOCKS5 port ${MICROSOCKS_PORT:-1080} is listening"
+            local _socks_vio
+            _socks_vio=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+            if is_running && ss -tlnp 2>/dev/null | grep -q ":${_socks_vio} "; then
+                echo -e "  ${GREEN}✓${NC} SOCKS5 port ${_socks_vio} is listening"
             elif is_running; then
-                echo -e "  ${RED}✗${NC} SOCKS5 port ${MICROSOCKS_PORT:-1080} not listening"
+                echo -e "  ${RED}✗${NC} SOCKS5 port ${_socks_vio} not listening"
                 issues=$((issues + 1))
             fi
         fi
@@ -3855,6 +3832,12 @@ update_gfk() {
         "$INSTALL_DIR/venv/bin/pip" install --quiet --upgrade scapy aioquic 2>/dev/null || true
     fi
     rm -rf "$tmp_dir"
+
+    # Regenerate client wrapper (removes legacy microsocks startup)
+    if [ "$ROLE" = "client" ]; then
+        create_gfk_client_wrapper
+        pkill -f "${INSTALL_DIR}/bin/microsocks" 2>/dev/null || true
+    fi
 
     # Also check for management script updates
     update_management_script
@@ -4403,14 +4386,6 @@ _change_config_gfk() {
             log_error "Invalid flags. Use uppercase letters only: F, S, R, P, A, U, E, C"; return 1
         fi
         [ -n "$input" ] && GFK_TCP_FLAGS="$input"
-
-        echo -e "${BOLD}SOCKS5 port${NC} [${MICROSOCKS_PORT:-1080}]:"
-        read -p "  Port: " input < /dev/tty || true
-        if [ -n "$input" ] && ! _validate_port "$input"; then
-            log_error "Invalid port number"; return 1
-        fi
-        [ -n "$input" ] && MICROSOCKS_PORT="$input"
-        SOCKS_PORT="${MICROSOCKS_PORT:-1080}"
     fi
 
     # Regenerate parameters.py
@@ -6065,7 +6040,6 @@ uninstall_paqctl() {
     echo -e "  This will remove:"
     if [ "$BACKEND" = "gfw-knocker" ]; then
         echo "  - GFW-knocker scripts and config"
-        echo "  - microsocks binary"
     else
         echo "  - paqet binary"
     fi
@@ -6702,7 +6676,8 @@ show_menu() {
             # GFK status
             if [ "$gfk_installed" = true ]; then
                 if is_gfk_running; then
-                    echo -e "  GFK:         ${GREEN}● Running${NC}  |  VIO: ${GFK_VIO_PORT:-45000}  |  SOCKS5: 127.0.0.1:14000"
+                    local _gfk_sv; _gfk_sv=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
+                    echo -e "  GFK:         ${GREEN}● Running${NC}  |  VIO: ${GFK_VIO_PORT:-45000}  |  SOCKS5: 127.0.0.1:${_gfk_sv}"
                 else
                     echo -e "  GFK:         ${RED}○ Stopped${NC}  |  VIO: ${GFK_VIO_PORT:-45000}"
                 fi
@@ -7013,7 +6988,6 @@ main() {
                 generate_gfk_config || { log_error "Failed to regenerate GFK config"; exit 1; }
             fi
         elif [ "$ROLE" = "client" ]; then
-            install_microsocks || { log_error "Failed to install microsocks"; exit 1; }
             create_gfk_client_wrapper || { log_error "Failed to create client wrapper"; exit 1; }
         fi
         PAQET_VERSION="$GFK_VERSION_PINNED"
@@ -7173,11 +7147,13 @@ main() {
             fi
             echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════════╝${NC}"
         else
+            local _socks_vio
+            _socks_vio=$(echo "${GFK_PORT_MAPPINGS:-14000:443}" | cut -d, -f1 | cut -d: -f1)
             echo -e "  Server:     ${BOLD}${GFK_SERVER_IP}${NC}"
-            echo -e "  SOCKS5:     ${BOLD}127.0.0.1:${MICROSOCKS_PORT}${NC}"
+            echo -e "  SOCKS5:     ${BOLD}127.0.0.1:${_socks_vio}${NC}"
             echo ""
             echo -e "  ${YELLOW}Test your proxy:${NC}"
-            echo -e "  ${BOLD}  curl --proxy socks5h://127.0.0.1:${MICROSOCKS_PORT} https://httpbin.org/ip${NC}"
+            echo -e "  ${BOLD}  curl --proxy socks5h://127.0.0.1:${_socks_vio} https://httpbin.org/ip${NC}"
         fi
     elif [ "$ROLE" = "server" ]; then
         echo -e "  Port:       ${BOLD}${LISTEN_PORT}${NC}"
