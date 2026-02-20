@@ -7,10 +7,10 @@
 |_|             |_|
 ```
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/SamNet-dev/paqctl/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/iza7na/paqctl/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
-[![Server](https://img.shields.io/badge/server-Linux-lightgrey.svg)](https://github.com/SamNet-dev/paqctl)
-[![Client](https://img.shields.io/badge/client-Windows%20%7C%20macOS%20%7C%20Linux-green.svg)](https://github.com/SamNet-dev/paqctl)
+[![Server](https://img.shields.io/badge/server-Linux-lightgrey.svg)](https://github.com/iza7na/paqctl)
+[![Client](https://img.shields.io/badge/client-Windows%20%7C%20macOS%20%7C%20Linux-green.svg)](https://github.com/iza7na/paqctl)
 
 **Bypass firewall restrictions and access the free internet**
 
@@ -644,7 +644,7 @@ brew install python@3.11
 #### Step 2: Clone the Repository
 
 ```bash
-git clone https://github.com/SamNet-dev/paqctl.git
+git clone https://github.com/iza7na/paqctl.git
 cd paqctl/gfk/client
 ```
 
@@ -812,7 +812,7 @@ sudo apt install python3 python3-pip  # Debian/Ubuntu
 pip3 install scapy aioquic
 
 # Clone and configure
-git clone https://github.com/SamNet-dev/paqctl.git
+git clone https://github.com/iza7na/paqctl.git
 cd paqctl/gfk/client
 
 # Create parameters.py (same as macOS section above)
