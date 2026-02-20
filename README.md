@@ -7,10 +7,10 @@
 |_|             |_|
 ```
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/iza7na/paqctl/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/iza7na/paqctl-forks/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE)
-[![Server](https://img.shields.io/badge/server-Linux-lightgrey.svg)](https://github.com/iza7na/paqctl)
-[![Client](https://img.shields.io/badge/client-Windows%20%7C%20macOS%20%7C%20Linux-green.svg)](https://github.com/iza7na/paqctl)
+[![Server](https://img.shields.io/badge/server-Linux-lightgrey.svg)](https://github.com/iza7na/paqctl-forks)
+[![Client](https://img.shields.io/badge/client-Windows%20%7C%20macOS%20%7C%20Linux-green.svg)](https://github.com/iza7na/paqctl-forks)
 
 **Bypass firewall restrictions and access the free internet**
 
@@ -131,7 +131,7 @@ This is for when you have a panel on **both** servers (Iran + foreign) and want 
 
 **1. Install paqctl on the foreign server (server role):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl-forks/main/paqctl.sh | sudo bash
 ```
 - Choose **server** role
 - Set port mapping: `14000:443` (where `443` is your panel's inbound port)
@@ -139,7 +139,7 @@ curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl/main/paqctl.sh | sudo
 
 **2. Install paqctl on the Iran server (client role):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl-forks/main/paqctl.sh | sudo bash
 ```
 - Choose **client** role
 - Use the **exact same** port mappings shown in the server output (e.g. `14000:443,14001:10443`)
@@ -235,7 +235,7 @@ paqctl will add SOCKS5 on the next available port and append it automatically.
 Run this on your VPS (requires root):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl-forks/main/paqctl.sh | sudo bash
 ```
 
 Then open the interactive menu:
