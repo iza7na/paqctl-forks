@@ -2136,7 +2136,7 @@ sudo paqctl logs      # مشاهده لاگ‌ها
 ## مشارکت
 
 مشکلات و pull request در گیت‌هاب:
-https://github.com/SamNet-dev/paqctl
+https://github.com/iza7na/paqctl-forks
 
 ---
 
