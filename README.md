@@ -1248,7 +1248,7 @@ AGPL-3.0 License - See [LICENSE](LICENSE) file.
 
 **۱. نصب paqctl روی سرور خارج (نقش server):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SamNet-dev/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl-forks/main/paqctl.sh | sudo bash
 ```
 - نقش **server** را انتخاب کنید
 - مپینگ پورت: `14000:443` (که `443` پورت اینباند پنل شماست)
@@ -1256,7 +1256,7 @@ curl -fsSL https://raw.githubusercontent.com/SamNet-dev/paqctl/main/paqctl.sh | 
 
 **۲. نصب paqctl روی سرور ایران (نقش client):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SamNet-dev/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl-forks/main/paqctl.sh | sudo bash
 ```
 - نقش **client** را انتخاب کنید
 - **دقیقاً همان** مپینگ‌هایی که در خروجی سرور نمایش داده شد را استفاده کنید (مثلاً `14000:443,14001:10443`)
@@ -1352,7 +1352,7 @@ paqctl به صورت خودکار SOCKS5 را روی پورت آزاد بعدی 
 این دستور را روی VPS خود اجرا کنید (نیاز به root دارد):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SamNet-dev/paqctl/main/paqctl.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/iza7na/paqctl-forks/main/paqctl.sh | sudo bash
 ```
 
 سپس منوی تعاملی را باز کنید:
@@ -1392,10 +1392,11 @@ sudo paqctl info
 
 ### مرحله ۱: دانلود
 
-1. بروید به: https://github.com/SamNet-dev/paqctl
-2. روی دکمه سبز **"Code"** کلیک کنید → **"Download ZIP"**
-3. فایل ZIP را در هر جایی استخراج کنید (مثلاً دسکتاپ)
-4. وارد پوشه `windows` شوید
+1. بروید به:
+https://github.com/iza7na/paqctl-forks
+3. روی دکمه سبز **"Code"** کلیک کنید → **"Download ZIP"**
+4. فایل ZIP را در هر جایی استخراج کنید (مثلاً دسکتاپ)
+5. وارد پوشه `windows` شوید
 
 ### مرحله ۲: نصب پروتکل
 
@@ -1441,13 +1442,13 @@ sudo paqctl info
 
 **گزینه A: یک خطی (خودکار دانلود و اجرا می‌کند)**
 ```powershell
-irm https://raw.githubusercontent.com/SamNet-dev/paqctl/main/windows/paqet-client.ps1 | iex
+irm https://raw.githubusercontent.com/iza7na/paqctl-forks/main/windows/paqet-client.ps1 | iex
 ```
 
 **گزینه B: اول دانلود، بعد اجرا**
 ```powershell
-git clone https://github.com/SamNet-dev/paqctl.git
-cd paqctl\windows
+git clone https://github.com/iza7na/paqctl-forks.git
+cd paqctl-forks\windows
 .\paqet-client.ps1
 ```
 
